@@ -1,0 +1,107 @@
+1:00:00
+Observerable + Observer = Subject
+
+Контролируемая последовательность обозначается с суффиксом $$ (тот же Subject)
+
+Пример:
+const controlSequense$$ = new Subject();
+
+controlSequense$$.next(1);
+controlSequense$$.next(3);
+controlSequense$$.next(5);
+
+controlSequense$$.subcribe((value => {
+  console.log(value);
+}));
+
+// Здесь ничего не увидим, т.к. последовательность "горячая", 
+// не будет вывода => 1, 3, 5
+
+controlSequense$$.next(11);
+controlSequense$$.next(13);
+controlSequense$$.next(15);
+
+// А здесь уже увидим добавленные значения
+// =>  11, 13, 15
+
+setTimeout(() => {
+  controlSequence$$.next(100);
+}, 5000);
+
+// => 100 (через 5 секунд)
+
+Иными словами, в эту последовательность можно подлить дополнительные данные на ходу (что-то похожее на Event Bus).
+Заодно такая последовательность является бесконечной.
+
+Виды Subject-ов:
+
+1) Behavior Subject
+- возможность задать начальное значение - new BehaviorSubject(0)
+- пока не закончился - кэширует своё последнее значение
+
+Пример:
+const controlSequense$$ = new BehaviorSubject(0);
+
+controlSequense$$.subcribe((value => {
+  console.log(`A => ${value}`);
+}));
+
+controlSequense$$.next(11);
+controlSequense$$.next(13);
+controlSequense$$.next(15);
+
+setTimeout(() => {
+  controlSequense$$.subcribe((value => {
+    console.log(`B => ${value}`);
+  }));
+}, 5000);
+
+// Ожидаем увидеть сперва начальное значение
+// => A => 0
+// => A => 10
+// => A => 11
+// => A => 15
+// через 5 секунд на повторной подписке остаётся последнее значение в кэше
+// => B => 15
+
+2) Async Subject
+- отрабатывает 1 раз, когда будет закончен
+- кэширует это значение
+
+Пример:
+const controlSequense$$ = new AsyncSubject();
+
+controlSequense$$.subcribe((value => {
+  console.log(`A => ${value}`);
+}));
+
+controlSequense$$.next(11);
+controlSequense$$.next(13);
+controlSequense$$.next(15);
+
+setTimeout(() => {
+  controlSequense$$.subcribe((value => {
+    console.log(`C => ${value}`);
+  }));
+  controlSequense$$.complete();
+}, 2000);
+
+setTimeout(() => {
+  controlSequense$$.subcribe((value => {
+    console.log(`B => ${value}`);
+  }));
+}, 5000);
+
+
+// A, C получили последнее значение после закрытия
+// => A => 15
+// => C => 15
+// спустя 5с
+// => B => 15
+
+Каждый новый подписчик, подписываясь на законченный поток (который complete()) получает последнее значение из кэша.
+
+3) Replay Subject
+
+
+
